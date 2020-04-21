@@ -1,5 +1,7 @@
 package data.jpa.querydsl;
 
+import com.querydsl.core.QueryResults;
+import com.querydsl.core.Tuple;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import data.jpa.querydsl.entity.Member;
 import data.jpa.querydsl.entity.QMember;
@@ -11,6 +13,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
+
+import java.util.List;
 
 import static data.jpa.querydsl.entity.QMember.*;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -64,5 +68,83 @@ public class QueryBasicTest {
             .fetchOne();
 
         assertThat(findMember.getUsername()).isEqualTo("member1");
+    }
+
+    @Test
+    public void search() {
+        Member findMember = jpaQueryFactory
+            .selectFrom(member)
+            .where(member.username.eq("member1")
+                .and(member.age.between(10, 30)))
+            .fetchOne();
+
+        assertThat(findMember.getAge()).isEqualTo(10);
+    }
+
+    @Test
+    public void searchAndParam() {
+        Member findMember = jpaQueryFactory
+            .selectFrom(member)
+            .where(
+                member.team.name.eq("team1"),
+                member.age.goe(10)
+            ).fetchFirst();
+
+        assertThat(findMember.getUsername()).isEqualTo("member1");
+    }
+
+    @Test
+    public void order() {
+        em.persist(new Member(null, 100));
+        em.persist(new Member("member5", 100));
+        em.persist(new Member("member6", 100));
+
+        List<Member> members = jpaQueryFactory
+            .selectFrom(member)
+            .where(member.age.eq(100))
+            .orderBy(member.age.desc(), member.username.asc().nullsLast())
+            .fetch();
+
+        Member member5 = members.get(0);
+        Member member6 = members.get(1);
+        Member memberNull = members.get(2);
+
+        assertThat(member5.getUsername()).isEqualTo("member5");
+        assertThat(member6.getUsername()).isEqualTo("member6");
+        assertThat(memberNull.getUsername()).isNull();
+    }
+
+    @Test
+    public void paging() {
+        QueryResults<Member> results = jpaQueryFactory
+            .selectFrom(member)
+            .where(member.age.goe(0))
+            .offset(0)
+            .limit(2)
+            .fetchResults();
+
+        assertThat(results.getTotal()).isEqualTo(4);
+        assertThat(results.getResults().size()).isEqualTo(2);
+        assertThat(results.getLimit()).isEqualTo(2);
+        assertThat(results.getOffset()).isEqualTo(0);
+    }
+
+    @Test
+    public void aggregation() {
+        Tuple tuple = jpaQueryFactory
+            .select(
+                member.count(),
+                member.age.sum(),
+                member.age.avg(),
+                member.age.max(),
+                member.age.min())
+            .from(member)
+            .fetchOne();
+
+        assertThat(tuple.get(member.count())).isEqualTo(4);
+        assertThat(tuple.get(member.age.sum())).isEqualTo(100);
+        assertThat(tuple.get(member.age.avg())).isEqualTo(25);
+        assertThat(tuple.get(member.age.max())).isEqualTo(40);
+        assertThat(tuple.get(member.age.min())).isEqualTo(10);
     }
 }
