@@ -4,7 +4,6 @@ import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import data.jpa.querydsl.entity.Member;
-import data.jpa.querydsl.entity.QMember;
 import data.jpa.querydsl.entity.Team;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,10 +12,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
-
 import java.util.List;
 
-import static data.jpa.querydsl.entity.QMember.*;
+import static data.jpa.querydsl.entity.QMember.member;
+import static data.jpa.querydsl.entity.QTeam.team;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
@@ -146,5 +145,35 @@ public class QueryBasicTest {
         assertThat(tuple.get(member.age.avg())).isEqualTo(25);
         assertThat(tuple.get(member.age.max())).isEqualTo(40);
         assertThat(tuple.get(member.age.min())).isEqualTo(10);
+    }
+
+    @Test
+    public void join() {
+        final List<Member> members = jpaQueryFactory
+            .selectFrom(member)
+            .join(member.team, team)
+            .where(team.name.eq("team1"))
+            .fetch();
+
+        assertThat(members)
+            .extracting("username")
+            .containsExactly("member1", "member2");
+    }
+
+    @Test
+    public void theta_join() {
+        em.persist(new Member("team1"));
+        em.persist(new Member("team2"));
+        em.persist(new Member("team3"));
+
+        final List<Member> members = jpaQueryFactory
+            .select(member)
+            .from(member, team)
+            .where(member.username.eq(team.name))
+            .fetch();
+
+        assertThat(members)
+            .extracting("username")
+            .containsExactly("team1", "team2");
     }
 }
