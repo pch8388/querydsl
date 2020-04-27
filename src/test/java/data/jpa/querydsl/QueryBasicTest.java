@@ -4,6 +4,7 @@ import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import data.jpa.querydsl.entity.Member;
+import data.jpa.querydsl.entity.QMember;
 import data.jpa.querydsl.entity.Team;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,6 +13,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.PersistenceUnit;
 import java.util.List;
 
 import static data.jpa.querydsl.entity.QMember.member;
@@ -207,5 +210,24 @@ public class QueryBasicTest {
         for (Tuple tuple : members) {
             System.out.println("member : " + tuple);
         }
+    }
+
+    @PersistenceUnit
+    EntityManagerFactory emf;
+
+    @Test
+    public void fetch_join() {
+        em.flush();
+        em.clear();
+
+        final Member findMember = jpaQueryFactory
+            .select(QMember.member)
+            .from(QMember.member)
+            .join(QMember.member.team, team).fetchJoin()
+            .where(QMember.member.username.eq("member1"))
+            .fetchOne();
+
+        final boolean loaded = emf.getPersistenceUnitUtil().isLoaded(findMember.getTeam());
+        assertThat(loaded).isTrue();
     }
 }
