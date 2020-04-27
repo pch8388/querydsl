@@ -176,4 +176,36 @@ public class QueryBasicTest {
             .extracting("username")
             .containsExactly("team1", "team2");
     }
+
+    @Test
+    public void left_outer_join() {
+        final List<Tuple> tuples = jpaQueryFactory
+            .select(member, team)
+            .from(member)
+            .leftJoin(member.team, team)
+            .on(member.team.name.eq("team1"))
+            .fetch();
+
+        for (Tuple tuple : tuples) {
+            System.out.println("tuple : " + tuple);
+        }
+    }
+
+    @Test
+    public void join_on_no_relation() {
+        em.persist(new Member("team1"));
+        em.persist(new Member("team2"));
+        em.persist(new Member("team3"));
+
+        final List<Tuple> members = jpaQueryFactory
+            .select(member, team)
+            .from(member)
+            .leftJoin(team)
+            .on(member.username.eq(team.name))
+            .fetch();
+
+        for (Tuple tuple : members) {
+            System.out.println("member : " + tuple);
+        }
+    }
 }
