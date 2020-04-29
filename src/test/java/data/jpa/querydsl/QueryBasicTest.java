@@ -279,4 +279,18 @@ public class QueryBasicTest {
         assertThat(members).extracting("age")
             .containsExactly(20, 30, 40);
     }
+
+    @Test
+    public void selectSubQuery() {
+        QMember memberSub = new QMember("memberSub");
+
+        final List<Tuple> tuples = jpaQueryFactory
+            .select(member.username,
+                    select(memberSub.age.avg())
+                        .from(memberSub))
+            .from(member)
+            .fetch();
+
+        tuples.forEach(System.out::println);
+    }
 }
