@@ -2,6 +2,8 @@ package data.jpa.querydsl;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.dsl.CaseBuilder;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import data.jpa.querydsl.entity.Member;
 import data.jpa.querydsl.entity.QMember;
@@ -292,5 +294,57 @@ public class QueryBasicTest {
             .fetch();
 
         tuples.forEach(System.out::println);
+    }
+
+    @Test
+    public void basicCase() {
+        final List<String> fetch = jpaQueryFactory
+            .select(member.age
+                .when(10).then("열살")
+                .when(20).then("스무살")
+                .otherwise("기타"))
+            .from(member)
+            .fetch();
+
+        for (String s : fetch) {
+            System.out.println(s);
+        }
+    }
+
+    @Test
+    public void caseBuilder() {
+        final List<String> fetch = jpaQueryFactory
+            .select(new CaseBuilder()
+                .when(member.age.between(0, 20)).then("0 ~ 20 살")
+                .when(member.age.between(21, 30)).then("20 ~ 30 살")
+                .otherwise("기타"))
+            .from(member)
+            .fetch();
+
+        for (String s : fetch) {
+            System.out.println(s);
+        }
+    }
+
+    @Test
+    public void constant() {
+        final Tuple tuple = jpaQueryFactory
+            .select(member.username, Expressions.constant("A"))
+            .from(member)
+            .where(member.username.eq("member1"))
+            .fetchOne();
+
+        System.out.println(tuple);
+    }
+
+    @Test
+    public void concat() {
+        final String s = jpaQueryFactory
+            .select(member.username.concat("_").concat(member.age.stringValue()))
+            .from(member)
+            .where(member.username.eq("member1"))
+            .fetchOne();
+
+        assertThat(s).isEqualTo("member1_10");
     }
 }
