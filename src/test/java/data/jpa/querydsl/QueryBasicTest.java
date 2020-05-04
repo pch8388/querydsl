@@ -2,9 +2,11 @@ package data.jpa.querydsl;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import data.jpa.querydsl.dto.MemberDto;
 import data.jpa.querydsl.entity.Member;
 import data.jpa.querydsl.entity.QMember;
 import data.jpa.querydsl.entity.Team;
@@ -346,5 +348,50 @@ public class QueryBasicTest {
             .fetchOne();
 
         assertThat(s).isEqualTo("member1_10");
+    }
+
+    @Test
+    public void projectionJpql() {
+        final List<MemberDto> results = em.createQuery("" +
+            "select new data.jpa.querydsl.dto.MemberDto(m.username, m.age) " +
+            "from Member m", MemberDto.class)
+            .getResultList();
+
+        for (MemberDto result : results) {
+            System.out.println("member : " + result);
+        }
+    }
+
+    @Test
+    public void projectionQuerydsl() {
+        final List<MemberDto> beans = jpaQueryFactory
+            .select(Projections.bean(MemberDto.class,
+                member.username, member.age))
+            .from(member)
+            .fetch();
+
+        for (MemberDto bean : beans) {
+            System.out.println("bean : " + bean);
+        }
+
+        final List<MemberDto> fields = jpaQueryFactory
+            .select(Projections.fields(MemberDto.class,
+                member.username, member.age))
+            .from(member)
+            .fetch();
+
+        for (MemberDto field : fields) {
+            System.out.println("field : " + field);
+        }
+
+        final List<MemberDto> constructors = jpaQueryFactory
+            .select(Projections.constructor(MemberDto.class,
+                member.username, member.age))
+            .from(member)
+            .fetch();
+
+        for (MemberDto constructor : constructors) {
+            System.out.println("constructor : " + constructor);
+        }
     }
 }
