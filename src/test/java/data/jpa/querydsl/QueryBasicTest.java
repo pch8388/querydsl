@@ -7,6 +7,7 @@ import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import data.jpa.querydsl.dto.MemberDto;
+import data.jpa.querydsl.dto.QMemberDto;
 import data.jpa.querydsl.entity.Member;
 import data.jpa.querydsl.entity.QMember;
 import data.jpa.querydsl.entity.Team;
@@ -392,6 +393,18 @@ public class QueryBasicTest {
 
         for (MemberDto constructor : constructors) {
             System.out.println("constructor : " + constructor);
+        }
+    }
+
+    @Test
+    public void projectionAnnotation() {
+        final List<MemberDto> members = jpaQueryFactory
+            .select(new QMemberDto(member.username, member.age))
+            .from(member)
+            .fetch();
+
+        for (MemberDto dto : members) {
+            System.out.println("member : " + dto);
         }
     }
 }
