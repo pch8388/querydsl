@@ -464,4 +464,91 @@ public class QueryBasicTest {
     private BooleanExpression ageEq(Integer ageCond) {
         return ageCond != null ? member.age.eq(ageCond) : null;
     }
+
+    @Test
+    public void bulkUpdate() {
+        final long count = jpaQueryFactory
+            .update(member)
+            .set(member.username, "test")
+            .where(member.age.gt(20))
+            .execute();
+
+        em.flush();
+        em.clear();
+
+        final List<Member> members = jpaQueryFactory
+            .selectFrom(member)
+            .fetch();
+
+        for (Member mem : members) {
+            System.out.println("member : " + mem);
+        }
+
+        assertThat(count).isEqualTo(2);
+    }
+
+    @Test
+    public void bulkAdd() {
+        final long count = jpaQueryFactory
+            .update(member)
+            .set(member.age, member.age.add(3))
+            .where(member.age.gt(20))
+            .execute();
+
+        em.flush();
+        em.clear();
+
+        final List<Member> members = jpaQueryFactory
+            .selectFrom(member)
+            .fetch();
+
+        for (Member mem : members) {
+            System.out.println("member : " + mem);
+        }
+
+        assertThat(count).isEqualTo(2);
+    }
+
+    @Test
+    public void bulkDelete() {
+        final long count = jpaQueryFactory
+            .delete(member)
+            .where(member.age.gt(10))
+            .execute();
+
+        em.flush();
+        em.clear();
+
+        final List<Member> members = jpaQueryFactory
+            .selectFrom(member)
+            .fetch();
+
+        for (Member mem : members) {
+            System.out.println("member : " + mem);
+        }
+
+        assertThat(count).isEqualTo(3);
+    }
+
+    @Test
+    public void sql_function_call() {
+        final String first = jpaQueryFactory
+            .select(
+                Expressions.stringTemplate(
+                    "function('replace', {0}, {1}, {2})",
+                    member.username, "member", "M"))
+            .from(member)
+            .fetchFirst();
+
+        assertThat(first).isEqualTo("M1");
+
+        final List<Member> members = jpaQueryFactory
+            .selectFrom(member)
+            .where(member.username.eq(member.username.lower()))
+            .fetch();
+
+        for (Member member1 : members) {
+            System.out.println("member : " + member1);
+        }
+    }
 }
