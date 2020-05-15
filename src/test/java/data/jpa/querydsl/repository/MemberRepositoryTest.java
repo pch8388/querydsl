@@ -7,6 +7,8 @@ import data.jpa.querydsl.entity.Team;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
@@ -73,5 +75,62 @@ class MemberRepositoryTest {
             memberRepository.search(condition2);
 
         assertThat(result2).extracting("username").containsExactly("member1", "member2");
+    }
+
+    @Test
+    public void searchSimple() {
+        Team team1 = new Team("team1");
+        Team team2 = new Team("team2");
+        em.persist(team1);
+        em.persist(team2);
+
+        Member member1 = new Member("member1", 10, team1);
+        Member member2 = new Member("member2", 20, team1);
+        Member member3 = new Member("member3", 30, team2);
+        Member member4 = new Member("member4", 40, team2);
+        em.persist(member1);
+        em.persist(member2);
+        em.persist(member3);
+        em.persist(member4);
+
+        MemberSearchCondition condition1 = new MemberSearchCondition();
+        final PageRequest pageRequest = PageRequest.of(0, 3);
+
+        final Page<MemberTeamDto> results = memberRepository.searchSimple(condition1, pageRequest);
+
+        assertThat(results.getContent())
+            .extracting("username")
+            .containsExactly("member1", "member2", "member3");
+
+        assertThat(results.getSize()).isEqualTo(3);
+    }
+
+    @Test
+    public void searchComplex() {
+        Team team1 = new Team("team1");
+        Team team2 = new Team("team2");
+        em.persist(team1);
+        em.persist(team2);
+
+        Member member1 = new Member("member1", 10, team1);
+        Member member2 = new Member("member2", 20, team1);
+        Member member3 = new Member("member3", 30, team2);
+        Member member4 = new Member("member4", 40, team2);
+        em.persist(member1);
+        em.persist(member2);
+        em.persist(member3);
+        em.persist(member4);
+
+        MemberSearchCondition condition1 = new MemberSearchCondition();
+        final PageRequest pageRequest = PageRequest.of(0, 3);
+
+        final Page<MemberTeamDto> results =
+            memberRepository.searchComplex(condition1, pageRequest);
+
+        assertThat(results.getContent())
+            .extracting("username")
+            .containsExactly("member1", "member2", "member3");
+
+        assertThat(results.getSize()).isEqualTo(3);
     }
 }
