@@ -122,15 +122,13 @@ class MemberRepositoryTest {
         em.persist(member4);
 
         MemberSearchCondition condition1 = new MemberSearchCondition();
-        final PageRequest pageRequest = PageRequest.of(0, 3);
+        final PageRequest pageRequest = PageRequest.of(0, 100);
 
         final Page<MemberTeamDto> results =
             memberRepository.searchComplex(condition1, pageRequest);
 
         assertThat(results.getContent())
             .extracting("username")
-            .containsExactly("member1", "member2", "member3");
-
-        assertThat(results.getSize()).isEqualTo(3);
+            .containsExactly("member1", "member2", "member3", "member4");
     }
 }
